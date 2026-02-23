@@ -1,0 +1,8 @@
+django>=4.2
+django-cassandra-engine>=1.8.0
+cassandra-driver>=3.28.0
+djangorestframework>=3.14.0
+django-cors-headers>=4.2.0
+PyJWT>=2.8.0
+bcrypt>=4.1.0
+python-dotenv>=1.0.0

@@ -1,0 +1,153 @@
+"""
+Management command to seed all 40 CR7 products
+"""
+
+from datetime import datetime
+from decimal import Decimal
+from django.core.management.base import BaseCommand
+from api.models import Product
+
+
+PRODUCTS_DATA = [
+    # Jerseys & Kits (IDs 1-8)
+    {"id": 1, "name": "CR7 Al Nassr Home Tribute Jersey", "category": "Kits & Apparel", "price": 12500, "image": "https://imgs.search.brave.com/hANtVCQvgmHkadKeCbS2JXPi0Nak7qmflO7JrQ_MrWo/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9jYW1w/ZW9uc3BvcnRzLmNv/bS9jZG4vc2hvcC9m/aWxlcy9JTUctMjAy/NDEwMTctV0EwNTYy/LmpwZz92PTE3Mjkx/NjMxNzEmd2lkdGg9/MjIyOA", "tagline": "RONALDO #7 Home Tribute"},
+    {"id": 2, "name": "CR7 Al Nassr Away Tribute Jersey", "category": "Kits & Apparel", "price": 12300, "image": "https://imgs.search.brave.com/WE0xqL0AAPAx8tGoME89sT4VCMqxMMV3s-Ohk2duOQ8/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly91LW1l/cmNhcmktaW1hZ2Vz/Lm1lcmNkbi5uZXQv/cGhvdG9zL20yMDE1/NjY4MjE4N18xLmpw/Zz93aWR0aD0xMjgw/JnF1YWxpdHk9NzUm/Xz0xNzYyMTk3ODk3", "tagline": "RONALDO #7 Away Tribute"},
+    {"id": 3, "name": "CR7 Portugal Home Tribute Jersey", "category": "Kits & Apparel", "price": 13000, "image": "https://imgs.search.brave.com/2dwI7ach5kvbUDckrZM3R-FzBLAvUyQN1buIf7aVq1k/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9idWNr/ZXQtcmV2ZXRlZS5z/dG9yYWdlLmdvb2ds/ZWFwaXMuY29tL3dw/LWNvbnRlbnQvdXBs/b2Fkcy8yMDI2LzAx/LzEyMDcyMjU5L0Ny/aXN0aWFuby1Sb25h/bGRvLVBvcnR1Z2Fs/LUplcnNleS0yMDI2/LUNyNy1OdW1iZXIt/Ny1Tb2NjZXItU2hp/cnQtRmFuLUVkaXRp/b24tdHJlbmRpbmdu/b3dlXzIuanBn", "tagline": "RONALDO #7 Portugal Style"},
+    {"id": 4, "name": "CR7 Portugal Away Tribute Jersey", "category": "Kits & Apparel", "price": 12800, "image": "https://imgs.search.brave.com/rjqCuxL6nNY-4zMi1n9eAYLsU_SN4sWTJh5GsaM3a1A/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9pLmVi/YXlpbWcuY29tL2lt/YWdlcy9nL1JlUUFB/ZVN3YXdCcEJRekMv/cy1sNTAwLndlYnA", "tagline": "RONALDO #7 Away Fan Edition"},
+    {"id": 5, "name": "CR7 Legacy Black Jersey", "category": "Kits & Apparel", "price": 13500, "image": "https://imgs.search.brave.com/xG72OsguQazXn8GS4Ud9C-hP_Ix1h68t07i_BpchRqQ/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly90aGVq/ZXJzZXljdWx0dXJl/LmNvbS9jZG4vc2hv/cC9maWxlcy9jcmlz/dGlhbm8tcm9uYWxk/by1tYW5jaGVzdGVy/LXVuaXRlZC0yMDA3/LTIwMDgtYmxhY2st/bG9uZy1zbGVldmUt/YWlnLXNwb25zb3It/a2l0LWplcnNleS1t/YWlsbG90LXRyaWtv/dC1iYWNrLmpwZz92/PTE3NDY0OTQ3NTMm/d2lkdGg9MTk0Ng", "tagline": "Limited Black #7 Edition"},
+    {"id": 6, "name": "CR7 Champions Gold Jersey", "category": "Kits & Apparel", "price": 14200, "image": "https://imgs.search.brave.com/YglKJMoQaFvu4GweASy6l92lfkV1agYeoRuCO3gxmlQ/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9mb290/YmFsbHBhdGNoa2lu/Zy5jb20vY2RuL3No/b3AvZmlsZXMvSU1H/XzgyMjJfNTMweEAy/eC5wbmc_dj0xNzI3/MTYzNjkz", "tagline": "CR7 Gold Champions League Jersey"},
+    {"id": 7, "name": "CR7 Street Edition Jersey", "category": "Kits & Apparel", "price": 11900, "image": "https://imgs.search.brave.com/U3nvgKfBmebb3DkIsTOuTFhWdDkUTRlHLIpiyuYa8Vg/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9pLmV0/c3lzdGF0aWMuY29t/LzQ0MDU1NjE1L3Iv/aWwvZTYzZjNhLzY3/NTMzNzQ5MDQvaWxf/MzAweDMwMC42NzUz/Mzc0OTA0XzJ2Y2Qu/anBn", "tagline": "Urban Street Style #7"},
+    {"id": 8, "name": "CR7 Red Devil Style Jersey", "category": "Kits & Apparel", "price": 12600, "image": "https://imgs.search.brave.com/1_pF0Bzgc8eMXxfw4rf_PfJMmtqv_yp1WMyM5m7knhI/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9jeWJl/cnJpZWRzdG9yZS5j/b20vd3AtY29udGVu/dC91cGxvYWRzLzIw/MjUvMDkvQ3I3LW11/ZmMtbnVtYmVyLTct/cHJpbnRlZC1qZXJz/ZXktcmVkLWJhY2st/MzAweDMwMC5wbmc", "tagline": "Classic Retro Tribute"},
+    
+    # Hoodies (IDs 9-14)
+    {"id": 9, "name": "CR7 Signature Hoodie – Black", "category": "Hoodies", "price": 8500, "image": "https://imgs.search.brave.com/rvjYtHv5pvRcANNxUN4QcWWTPfbNme3RZDIfs2sRRiU/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9pLmV0/c3lzdGF0aWMuY29t/LzI1MTcwODMzL3Iv/aWwvYzcxOWZiLzMw/NDA1MTc5MjUvaWxf/MzAweDMwMC4zMDQw/NTE3OTI1X3Jod24u/anBn", "tagline": "Premium GOAT Hoodie"},
+    {"id": 10, "name": "CR7 Signature Hoodie – Grey", "category": "Hoodies", "price": 8300, "image": "https://imgs.search.brave.com/dJHd_rNLTb1osFyOn1cawm4pVQzrt_Yufy3qbC1XDZ8/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9pbWFn/ZXMudmlyYWxkZXMu/Y29tL3dwLWNvbnRl/bnQvdXBsb2Fkcy8y/MDI0LzA4L2NyaXN0/aWFuby1yb25hbGRv/LWNyNy1zaWduYXR1/cmVzLWhvb2RpZS0x/LWt6bm53LmpwZw", "tagline": "Soft Grey Comfort Hoodie"},
+    {"id": 11, "name": "CR7 Training Hoodie", "category": "Hoodies", "price": 8700, "image": "https://imgs.search.brave.com/GfWb4aj5IfWIOz4XThq5bClmd1XqD1FdvmBZ9aWvFK8/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly93d3cu/YW1lcmljYWphY2tl/dHMuY29tL3dwLWNv/bnRlbnQvdXBsb2Fk/cy8yMDI0LzA4L1Bv/cnR1Z2FsLUNyaXN0/aWFuby1Sb25hbGRv/LUhvb2RpZS0yNjV4/MzUzLndlYnA", "tagline": "Active Training Fit"},
+    {"id": 12, "name": "CR7 Street Hoodie", "category": "Hoodies", "price": 8200, "image": "https://imgs.search.brave.com/fqU6kd06YQmCm6h6392d1X89-JXc-3AfVgMG-rpWTFQ/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9tLm1l/ZGlhLWFtYXpvbi5j/b20vaW1hZ2VzL0kv/NjFrSnJxWlRYUUwu/anBn", "tagline": "Urban Streetwear"},
+    {"id": 13, "name": "CR7 Legacy Zip Hoodie", "category": "Hoodies", "price": 8900, "image": "https://imgs.search.brave.com/wsm4aUU6VvjCXk0t_fVBt2xwKW9lG6oOFjA1trl7R38/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9jZG4u/cHJpbnRibHVyLmNv/bS91bnNhZmUvNTQw/eDU0MC9hc3NldHMu/cHJpbnRibHVyLmNv/bS8yMDI1LzAxLzEz/L3NjcmVlbnNob3Qt/MTQyLWJkNWUzMDM4/OTg5Y2NmNDI2NWEy/ODRjMTkwNTkyODVl/LnBuZw", "tagline": "Zip Style Comfort"},
+    {"id": 14, "name": "CR7 Minimal Logo Sweatshirt", "category": "Hoodies", "price": 7900, "image": "https://imgs.search.brave.com/0YzNfo-wspuLpcHeXT_Rfox2j3sUJ5y6s0KhTauPLwc/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9paDEu/cmVkYnViYmxlLm5l/dC9pbWFnZS4yNjYw/MTM3NTU1LjM1NTEv/c3NyY28sb3ZlcnNp/emVkX3N3ZWF0c2hp/cnQsbWVuc18wMSxl/OGU2ZTE6YWE4ZmZk/OWYwZixmcm9udCxz/cXVhcmVfcHJvZHVj/dCx4NjAwLmpwZw", "tagline": "Clean Minimalist Fit"},
+    
+    # Footwear (IDs 15-19)
+    {"id": 15, "name": "CR7 Speed Pro Football Boots", "category": "Footwear", "price": 16500, "image": "https://imgs.search.brave.com/K33jKcOzQfu8MGAXIHMHEZZScDSn6jkZZOrIrSFGMGM/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly93d3cu/c29jY2VyYmlibGUu/Y29tL21lZGlhLzky/ODMxL2NyNy1zZS10/YWIuanBn", "tagline": "Designed for explosive speed"},
+    {"id": 16, "name": "CR7 Power Strike Football Boots", "category": "Footwear", "price": 17000, "image": "https://imgs.search.brave.com/K33jKcOzQfu8MGAXIHMHEZZScDSn6jkZZOrIrSFGMGM/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly93d3cu/c29jY2VyYmlibGUu/Y29tL21lZGlhLzky/ODMxL2NyNy1zZS10/YWIuanBn", "tagline": "Powerful kick, maximum comfort"},
+    {"id": 17, "name": "CR7 Indoor Court Shoes", "category": "Footwear", "price": 12000, "image": "https://imgs.search.brave.com/JCHTufRCn0L91jgCoN3K_V07v-yrhmoYZjHcRTvCFdg/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9pLnBp/bmltZy5jb20vb3Jp/Z2luYWxzLzdmLzE0/LzU4LzdmMTQ1ODI2/YzY5MGM2NWZhNGJj/NGEzNmM0NjdhOGZj/LmpwZw", "tagline": "Indoor agility & grip"},
+    {"id": 18, "name": "CR7 Lifestyle Sneakers", "category": "Footwear", "price": 14500, "image": "https://imgs.search.brave.com/0wMZq8ea7rnm7vQCgB-dmnExU-pR4xfBf-UEr6JpPJk/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9pLmV0/c3lzdGF0aWMuY29t/LzM5Mzc2MjU0L3Iv/aWwvZTcwZjViLzU2/OTc0OTMwMzEvaWxf/MzAweDMwMC41Njk3/NDkzMDMxX3M1YTYu/anBn", "tagline": "Casual everyday style"},
+    {"id": 19, "name": "CR7 Training Runners", "category": "Footwear", "price": 13800, "image": "https://imgs.search.brave.com/p4qriK5q8fGpypp-kwoK5pLZ_uyOond3iG2du9rZmR8/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9zLmFs/aWNkbi5jb20vQHNj/MDQva2YvSDI4NTll/YTQ4NjlkMTQ2ODc4/MWFlZGI0YzkxNDBj/ODdkUy5wbmdfMzAw/eDMwMC5qcGc", "tagline": "Training & gym performance"},
+    
+    # Fragrances (IDs 20-25)
+    {"id": 20, "name": "CR7 Legacy Perfume", "category": "Fragrances", "price": 10500, "image": "https://cr7fragrances.store/cdn/shop/files/Legacy100ml_600x.png?v=1740492399", "tagline": "CRISTIANO RONALDO LEGACY EAU DE PARFUM"},
+    {"id": 21, "name": "CR7 Play It Cool Perfume", "category": "Fragrances", "price": 7000, "image": "https://cr7fragrances.store/cdn/shop/products/DSC6531_final_600x.jpg?v=1675093385", "tagline": "CR7 Play It Cool Eau De Toilette"},
+    {"id": 22, "name": "Cristiano Ronaldo Discover", "category": "Fragrances", "price": 7700, "image": "https://cr7fragrances.store/cdn/shop/files/Cr7-Discover-100ml-2_600x.jpg?v=1731923465", "tagline": "CRISTIANO RONALDO DISCOVER EAU DE TOILETTE 100ML GIFT SET"},
+    {"id": 23, "name": "Cristiano Ronaldo Fearless", "category": "Fragrances", "price": 7500, "image": "https://cr7fragrances.store/cdn/shop/files/CristianoRonaldoFearless30ml_600x.jpg?v=1689753222", "tagline": "CRISTIANO RONALDO FEARLESS EAU DE TOILETTE"},
+    {"id": 24, "name": "Cristiano Ronaldo Origins", "category": "Fragrances", "price": 7800, "image": "https://cr7fragrances.store/cdn/shop/files/FREE_1_600x.png?v=1698928437", "tagline": "Cristiano Ronaldo Origins Eau de Toilette 30ml Bundle"},
+    {"id": 25, "name": "CR7 Body Spray & Shower Set", "category": "Fragrances", "price": 5000, "image": "https://cr7fragrances.store/cdn/shop/files/CR7GIFTSET100ML2_600x.jpg?v=1700063821", "tagline": "CR7 100ML EAU DE TOILETTE, SHOWER GEL & BODY SPRAY GIFT SET"},
+    
+    # Eyewear (IDs 26-27)
+    {"id": 26, "name": "CR7 Sunglasses – Sport Edition", "category": "Eyewear", "price": 15000, "image": "https://avvenice.com/96947-home_default/cr7-cristiano-ronaldo-bd002-black-frame-sunglasses-exclusive-official-collection-cr7-eyewear.jpg", "tagline": "Sporty sun protection"},
+    {"id": 27, "name": "CR7 Sunglasses – Lifestyle Edition", "category": "Eyewear", "price": 9000, "image": "https://s.yimg.com/ny/api/res/1.2/NHLQD6mvyT8Dsj4FMAh3iA--/YXBwaWQ9aGlnaGxhbmRlcjt3PTIwMDA7aD0xMTI0O2NmPXdlYnA-/https://media.zenfs.com/en/robb_report_967/c2f7a0f70af6e1b8285111f35e008cff", "tagline": "Cool urban look"},
+    
+    # Accessories (IDs 28-32, 38)
+    {"id": 28, "name": "CR7 Cap", "category": "Accessories", "price": 1500, "image": "https://ih1.redbubble.net/image.4664877852.5914/ssrco,baseball_cap,product,161D36:1628f0f39d,front,square,600x600-bg,f8f8f8.jpg", "tagline": "CR7 Al Nassr Cap"},
+    {"id": 29, "name": "CR7 Training Socks Pack", "category": "Accessories", "price": 1500, "image": "https://cr7us.com/cdn/shop/files/8190-80-9000.png?v=1743444072&width=1200", "tagline": "Sporty comfort"},
+    {"id": 30, "name": "CR7 Gym Bag", "category": "Accessories", "price": 6200, "image": "https://imgs.search.brave.com/v8xBfjoeildCO8CSlLLa4cL9U-balQ3B5BJwjQB4ysg/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9pbWc0/LmRocmVzb3VyY2Uu/Y29tLzYwMHg2MDAv/ZjMvYWxidS9qYy9z/LzA3L2U3OTFlYjNm/LTgxN2ItNGVhNy05/MjVhLWY5ZmY0NjQ4/YmY1NC5qcGc", "tagline": "All‑in‑one gear bag"},
+    {"id": 31, "name": "CR7 Leather Belt", "category": "Accessories", "price": 4300, "image": "https://imgs.search.brave.com/LEwy8UMOg4hWplKJNc3y7rgbQCXGEEnCkOO5MGB4vj8/rs:fit:500:0:1:0/g:ce/aHR0cHM6Ly9tLm1l/ZGlhLWFtYXpvbi5j/b20vaW1hZ2VzL0kv/NzFTSHdDMEhZT0wu/anBn", "tagline": "Classic leather accessory"},
+    {"id": 32, "name": "CR7 Wristband Set", "category": "Accessories", "price": 3221, "image": "https://m.media-amazon.com/images/I/71ODTz-RMmL._AC_SY535_.jpg", "tagline": "Sport & style combo"},
+    {"id": 38, "name": "CR7 Custom Watch", "category": "Accessories", "price": 24500000, "image": "https://cxlcntsfta.cloudimg.io/https://d2j6dbq0eux0bg.cloudfront.net/images/16115183/4334436363?q=95&w=750&h=750&func=fit&bg_colour=white", "tagline": "Cristiano Ronaldo's Custom Jacob & Co. Watch Collection"},
+    
+    # Collectibles (IDs 33-36, 40)
+    {"id": 33, "name": "CR7 Legacy Portrait Art", "category": "Collectibles", "price": 2800, "image": "https://i.ebayimg.com/images/g/EuAAAeSwGzRokyKY/s-l500.webp", "tagline": "Iconic wall art"},
+    {"id": 34, "name": "CR7 Champions Wall Art", "category": "Collectibles", "price": 3200, "image": "https://i.ebayimg.com/images/g/LywAAeSwIDxpL--g/s-l500.webp", "tagline": "Champions league art"},
+    {"id": 35, "name": "CR7 Minimalist Number 7 Print", "category": "Collectibles", "price": 2400, "image": "https://www.sportscaveshop.com/cdn/shop/files/CristianoRonaldoBlack.jpg?v=1699152029&width=480", "tagline": "Portugal number 7"},
+    {"id": 36, "name": "CR7 Motivational Quote Frame", "category": "Collectibles", "price": 2600, "image": "https://www.sportscaveshop.com/cdn/shop/files/unframed-cristiano-ronaldo-motivational-sport-art.jpg?v=1746406678&width=5000", "tagline": "Motivation for your space"},
+    {"id": 40, "name": "CR7 Signed Jersey", "category": "Collectibles", "price": 65000, "image": "https://i.ebayimg.com/images/g/nEQAAeSwmvdpkz7f/s-l960.webp", "tagline": "Cristiano Ronaldo framed Hand Signed jersey"},
+    
+    # Bonus Kits & Apparel (IDs 37, 39)
+    {"id": 37, "name": "CR7 Bathrobe", "category": "Kits & Apparel", "price": 2000, "image": "https://cdn.faire.com/fastly/82490d3f9720fc1a5fa13da3f37599877b789fc875aa9ff824aefec7f9085f9e.jpeg?bg-color=FFFFFF&canvas=360:360&dpr=1&fit=bounds&format=jpg&height=360&width=360", "tagline": "Classy Bathrobe"},
+    {"id": 39, "name": "CR7 Beddings", "category": "Kits & Apparel", "price": 5000, "image": "https://www.ebuycos.com/cdn/shop/files/CR7CristianoRonaldoBeddingSetPatternQuiltDuvetCover_15_873bab75-9f18-40c0-ba6f-a79766599475_1024x1024.jpg?v=1694763982", "tagline": "CR7 Cristiano Ronaldo Bedding Set Duvet Cover"},
+]
+
+
+class Command(BaseCommand):
+    help = 'Seed all 40 CR7 products into Cassandra database'
+
+    def handle(self, *args, **options):
+        self.stdout.write(self.style.WARNING('Starting product seeding...'))
+        
+        # Define sizes for different categories
+        size_mapping = {
+            'Kits & Apparel': ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+            'Hoodies': ['XS', 'S', 'M', 'L', 'XL', 'XXL'],
+            'Footwear': ['38', '39', '40', '41', '42', '43', '44', '45'],
+            'Fragrances': [],
+            'Eyewear': ['S', 'M', 'L'],
+            'Accessories': [],
+            'Collectibles': [],
+        }
+        
+        created_count = 0
+        updated_count = 0
+        
+        for product_data in PRODUCTS_DATA:
+            try:
+                # Determine sizes based on category
+                sizes = size_mapping.get(product_data['category'], [])
+                
+                # Check if product exists
+                existing = Product.objects.filter(id=product_data['id']).first()
+                
+                if existing:
+                    # Update existing product
+                    existing.name = product_data['name']
+                    existing.category = product_data['category']
+                    existing.price = Decimal(str(product_data['price']))
+                    existing.image = product_data['image']
+                    existing.tagline = product_data['tagline']
+                    existing.sizes = sizes
+                    existing.in_stock = True
+                    existing.stock_quantity = 100
+                    existing.rating = 5.0
+                    existing.review_count = 128
+                    existing.updated_at = datetime.utcnow()
+                    existing.save()
+                    
+                    updated_count += 1
+                    self.stdout.write(
+                        self.style.SUCCESS(f'  ✓ Updated: [{product_data["id"]}] {product_data["name"]}')
+                    )
+                else:
+                    # Create new product
+                    Product.create(
+                        id=product_data['id'],
+                        name=product_data['name'],
+                        category=product_data['category'],
+                        price=Decimal(str(product_data['price'])),
+                        image=product_data['image'],
+                        tagline=product_data['tagline'],
+                        description=f"Premium {product_data['name']} - {product_data['tagline']}",
+                        sizes=sizes,
+                        in_stock=True,
+                        stock_quantity=100,
+                        rating=5.0,
+                        review_count=128,
+                        created_at=datetime.utcnow(),
+                        updated_at=datetime.utcnow(),
+                    )
+                    
+                    created_count += 1
+                    self.stdout.write(
+                        self.style.SUCCESS(f'  ✓ Created: [{product_data["id"]}] {product_data["name"]}')
+                    )
+                    
+            except Exception as e:
+                self.stdout.write(
+                    self.style.ERROR(f'  ✗ Error with [{product_data["id"]}] {product_data["name"]}: {str(e)}')
+                )
+        
+        # Summary
+        self.stdout.write('')
+        self.stdout.write(self.style.SUCCESS('═' * 60))
+        self.stdout.write(self.style.SUCCESS(f'Product seeding completed!'))
+        self.stdout.write(self.style.SUCCESS(f'  Created: {created_count} products'))
+        self.stdout.write(self.style.SUCCESS(f'  Updated: {updated_count} products'))
+        self.stdout.write(self.style.SUCCESS(f'  Total:   {created_count + updated_count} products'))
+        self.stdout.write(self.style.SUCCESS('═' * 60))
