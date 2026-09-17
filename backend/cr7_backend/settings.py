@@ -20,10 +20,10 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 # INSTALLED APPS
 # ============================================
 INSTALLED_APPS = [
-    # Cassandra engine must be first
+    
     'django_cassandra_engine',
     
-    # Django core (SQL-independent only)
+    # Django core
     'django.contrib.staticfiles',
     
     # Third-party
@@ -133,7 +133,7 @@ REST_FRAMEWORK = {
     ],
     'EXCEPTION_HANDLER': 'api.utils.custom_exception_handler',
     
-    # ADD THESE LINES to disable Django auth:
+    
     'UNAUTHENTICATED_USER': None,
     'UNAUTHENTICATED_TOKEN': None,
     'DEFAULT_AUTHENTICATION_CLASSES': [],

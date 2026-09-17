@@ -60,7 +60,7 @@ class CartItemSerializer(serializers.Serializer):
     size = serializers.CharField(required=False, allow_blank=True)
     added_at = serializers.DateTimeField(read_only=True)
     
-    # Product details (populated when reading)
+    # Product details 
     product = ProductSerializer(read_only=True, required=False)
 
 

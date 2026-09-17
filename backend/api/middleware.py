@@ -12,7 +12,7 @@ class JWTAuthenticationMiddleware(MiddlewareMixin):
     def process_request(self, request):
         request.user_data = None
         
-        # Skip authentication for certain paths
+     
         exempt_paths = [
             '/api/auth/login',
             '/api/auth/register',

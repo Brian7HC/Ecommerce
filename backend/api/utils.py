@@ -43,7 +43,7 @@ def error_response(message="Error", errors=None, status_code=status.HTTP_400_BAD
     return Response(response_data, status=status_code)
 
 
-# CR7 Stats Data (would typically come from an external API)
+# CR7 Stats Data 
 CR7_STATS = {
     'career_goals': 925,
     'international_goals': 135,

@@ -232,7 +232,7 @@ class ProfileView(APIView):
                     status_code=status.HTTP_404_NOT_FOUND
                 )
             
-            # Update allowed fields
+            # Update fields
             allowed_fields = ['name', 'phone', 'address', 'city', 'country']
             for field in allowed_fields:
                 if field in request.data:
